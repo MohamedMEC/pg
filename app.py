@@ -108,17 +108,35 @@ elif page == "🧮 Linear Algebra Lab":
     st.caption(
         "Hands-on practice for Unit 1 & 2: vector space, linear independence, "
         "basis, determinant, rank, eigenvalues/eigenvectors, orthogonality, "
-        "and least squares -- edit the numbers and see the results update live."
+        "least squares, linear transformations, systems of equations, and "
+        "singular value decomposition -- edit the numbers and see the "
+        "results (and pictures) update live."
     )
-    tab1, tab2, tab3 = st.tabs(
-        ["Matrix Explorer", "Independence, Basis & Orthogonality", "Least Squares Fit"]
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
+        [
+            "Vector Operations",
+            "Matrix Explorer",
+            "Matrix Transformations",
+            "Independence, Basis & Orthogonality",
+            "Least Squares Fit",
+            "Systems of Equations",
+            "SVD Explorer",
+        ]
     )
     with tab1:
-        linear_algebra_lab.render_matrix_lab()
+        linear_algebra_lab.render_vector_ops_lab()
     with tab2:
-        linear_algebra_lab.render_independence_lab()
+        linear_algebra_lab.render_matrix_lab()
     with tab3:
+        linear_algebra_lab.render_transformation_lab()
+    with tab4:
+        linear_algebra_lab.render_independence_lab()
+    with tab5:
         linear_algebra_lab.render_least_squares_lab()
+    with tab6:
+        linear_algebra_lab.render_linear_system_lab()
+    with tab7:
+        linear_algebra_lab.render_svd_lab()
 
 # ----------------------------------------------------------- Probability Lab
 elif page == "🎲 Probability Lab":
