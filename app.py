@@ -1,14 +1,14 @@
 """
-AIWebTutor -- an AI-powered study companion for the Principles of Data
-Science module (MEC7144CEM, MSc Data Science, Middle East College).
+AIWebTutor -- a free study companion for the Principles of Data Science
+module (MEC7144CEM, MSc Data Science, Middle East College).
 
 Run locally with:
     streamlit run app.py
 
 Deployed on Streamlit Community Cloud at aiwebtutor.streamlit.app.
-Set ANTHROPIC_API_KEY in the app's Secrets for the AI Tutor chat to work;
-every other page works without it. See access_control.py / README.md for
-the optional class access code and daily token budget guard.
+This app makes no external API calls and needs no secrets/API keys --
+it is entirely static content served by Streamlit, so it costs nothing
+to run no matter how many people use it.
 """
 
 import random
@@ -17,8 +17,6 @@ import streamlit as st
 
 from syllabus_data import MODULE_INFO, UNITS
 from quiz_data import QUIZ_BANK
-import tutor
-import access_control
 
 st.set_page_config(
     page_title="AIWebTutor - Principles of Data Science",
@@ -27,14 +25,11 @@ st.set_page_config(
 )
 
 # ---------------------------------------------------------------- sidebar --
-if st.session_state.pop("_switch_to_chat", False):
-    st.session_state["nav_page"] = "💬 AI Tutor Chat"
-
 st.sidebar.title("📊 AIWebTutor")
 st.sidebar.caption(f"{MODULE_INFO['code']} - {MODULE_INFO['title']}")
 page = st.sidebar.radio(
     "Go to",
-    ["🏠 Overview", "📚 Syllabus Explorer", "💬 AI Tutor Chat", "📝 Practice Quiz", "🎯 Assessment Prep"],
+    ["🏠 Overview", "📚 Syllabus Explorer", "📝 Practice Quiz", "🎯 Assessment Prep"],
     key="nav_page",
 )
 st.sidebar.divider()
@@ -45,7 +40,7 @@ st.sidebar.caption(
 
 # ------------------------------------------------------------- Overview ---
 if page == "🏠 Overview":
-    st.title("Principles of Data Science - AI Study Companion")
+    st.title("Principles of Data Science - Study Companion")
     st.write(MODULE_INFO["objectives"])
 
     col1, col2 = st.columns(2)
@@ -84,88 +79,6 @@ elif page == "📚 Syllabus Explorer":
             for t in u["topics"]:
                 st.markdown(f"- {t}")
             st.markdown("**Key terms:** " + ", ".join(f"`{k}`" for k in u["key_terms"]))
-            if st.button(f"Ask the AI Tutor about Unit {u['id']}", key=f"ask_unit_{u['id']}"):
-                st.session_state["pending_question"] = (
-                    f"Can you give me an overview of Unit {u['id']}: {u['title']}, "
-                    f"and explain how its topics connect to the rest of the module?"
-                )
-                st.session_state["_switch_to_chat"] = True
-                st.rerun()
-
-# ----------------------------------------------------------- AI Tutor Chat -
-elif page == "💬 AI Tutor Chat":
-    st.title("AI Tutor Chat")
-
-    if not tutor.is_configured():
-        st.warning(
-            "The AI Tutor isn't configured yet. Add an `ANTHROPIC_API_KEY` "
-            "to this app's Streamlit Secrets to enable live chat answers.\n\n"
-            "In the meantime, use **Syllabus Explorer** and **Practice Quiz** "
-            "-- they work without an API key."
-        )
-    elif access_control.is_access_gated() and not st.session_state.get("access_granted"):
-        st.info("This AI Tutor is for enrolled students. Enter the class access code to continue.")
-        code = st.text_input("Class access code", type="password")
-        if st.button("Unlock"):
-            if access_control.check_access_code(code):
-                st.session_state["access_granted"] = True
-                st.rerun()
-            else:
-                st.error("That code isn't right -- check with your instructor.")
-    elif access_control.daily_limit_reached():
-        st.warning(
-            "The class's daily AI Tutor quota has been used up for today. "
-            "Please check back tomorrow -- **Syllabus Explorer** and "
-            "**Practice Quiz** are still available any time."
-        )
-    else:
-        used = access_control.get_usage_today()
-        limit = access_control.get_daily_limit()
-        st.caption(
-            "Ask about linear algebra, probability, data wrangling, EDA, or "
-            "statistical modelling -- answers are grounded in this module's syllabus."
-        )
-        if access_control.is_access_gated() or used > 0:
-            st.progress(
-                min(used / limit, 1.0),
-                text=f"Class usage today: {used:,} / {limit:,} tokens",
-            )
-
-        if "messages" not in st.session_state:
-            st.session_state.messages = []
-
-        for msg in st.session_state.messages:
-            with st.chat_message(msg["role"]):
-                st.markdown(msg["content"])
-
-        pending = st.session_state.pop("pending_question", None)
-        prompt = st.chat_input("Ask a question about the module...") or pending
-
-        if prompt:
-            st.session_state.messages.append({"role": "user", "content": prompt})
-            with st.chat_message("user"):
-                st.markdown(prompt)
-
-            with st.chat_message("assistant"):
-                usage_sink = {}
-                try:
-                    reply = st.write_stream(
-                        tutor.stream_reply(st.session_state.messages, usage_sink)
-                    )
-                except Exception as e:
-                    reply = (
-                        "Sorry, I couldn't reach the AI tutor service just now "
-                        f"({e}). Please try again in a moment."
-                    )
-                    st.error(reply)
-            st.session_state.messages.append({"role": "assistant", "content": reply})
-            access_control.record_usage(
-                usage_sink.get("input_tokens", 0) + usage_sink.get("output_tokens", 0)
-            )
-
-        if st.session_state.messages and st.button("Clear conversation"):
-            st.session_state.messages = []
-            st.rerun()
 
 # --------------------------------------------------------------- Quizzes --
 elif page == "📝 Practice Quiz":
@@ -252,12 +165,6 @@ elif page == "🎯 Assessment Prep":
                         for uid in related_units
                     )
                 )
-            cols = st.columns(len(related_units) or 1)
-            for c, uid in zip(cols, related_units):
-                with c:
-                    if st.button(f"Quiz: Unit {uid}", key=f"prep_quiz_{a['name']}_{uid}"):
-                        st.session_state["_jump_unit"] = uid
-                        st.info("Head to **Practice Quiz** in the sidebar and pick this unit.")
 
     st.divider()
     st.subheader("Random review question")

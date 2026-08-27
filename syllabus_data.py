@@ -2,9 +2,9 @@
 Structured content for the "Principles of Data Science" module
 (MEC7144CEM, MSc Data Science, Middle East College).
 
-This is the single source of truth the rest of the app (syllabus browser,
-AI tutor system prompt, and quizzes) is grounded in, so answers stay
-specific to this module rather than generic data-science trivia.
+This is the single source of truth the rest of the app (syllabus browser
+and quizzes) is built from, so content stays specific to this module
+rather than generic data-science trivia.
 """
 
 MODULE_INFO = {
@@ -171,37 +171,3 @@ UNITS = [
         ],
     },
 ]
-
-
-def syllabus_as_context_text() -> str:
-    """Flatten the module + units into plain text for grounding the AI tutor's
-    system prompt."""
-    lines = [
-        f"Module: {MODULE_INFO['code']} -- {MODULE_INFO['title']} "
-        f"({MODULE_INFO['programme']}, {MODULE_INFO['college']})",
-        "",
-        "Module objectives:",
-        MODULE_INFO["objectives"],
-        "",
-        "Learning outcomes:",
-    ]
-    for i, lo in enumerate(MODULE_INFO["learning_outcomes"], 1):
-        lines.append(f"  LO{i}: {lo}")
-    lines.append("")
-    lines.append("Syllabus units:")
-    for u in UNITS:
-        lines.append(f"  Unit {u['id']}: {u['title']}")
-        for t in u["topics"]:
-            lines.append(f"    - {t}")
-    lines.append("")
-    lines.append("Assessment structure:")
-    for a in MODULE_INFO["assessments"]:
-        lines.append(
-            f"  - {a['name']} ({a['weight']}, {a['duration']}, maps to "
-            f"{a['maps_to_lo']}): {a['description']}"
-        )
-    lines.append("")
-    lines.append("Recommended textbooks:")
-    for r in MODULE_INFO["references"]["basic"] + MODULE_INFO["references"]["recommended"]:
-        lines.append(f"  - {r}")
-    return "\n".join(lines)
