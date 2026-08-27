@@ -57,11 +57,15 @@ def is_configured() -> bool:
     return bool(get_api_key())
 
 
-def stream_reply(history: Iterable[dict]) -> Iterable[str]:
+def stream_reply(history: Iterable[dict], usage_sink: dict | None = None) -> Iterable[str]:
     """Stream a reply from Claude given the running chat history.
 
     `history` is a list of {"role": "user"|"assistant", "content": str}
     dicts, oldest first (matches st.session_state.messages).
+
+    If `usage_sink` is passed, it is populated with `input_tokens` and
+    `output_tokens` once the stream finishes, so callers can track spend
+    (see access_control.record_usage) without waiting on a second API call.
     """
     import anthropic
 
@@ -75,3 +79,10 @@ def stream_reply(history: Iterable[dict]) -> Iterable[str]:
     ) as stream:
         for text in stream.text_stream:
             yield text
+        if usage_sink is not None:
+            try:
+                usage = stream.get_final_message().usage
+                usage_sink["input_tokens"] = usage.input_tokens
+                usage_sink["output_tokens"] = usage.output_tokens
+            except Exception:
+                pass

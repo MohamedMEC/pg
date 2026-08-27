@@ -3,4 +3,5 @@ __pycache__/
 .venv/
 venv/
 .streamlit/secrets.toml
+.daily_usage.json
 .DS_Store

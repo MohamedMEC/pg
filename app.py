@@ -7,7 +7,8 @@ Run locally with:
 
 Deployed on Streamlit Community Cloud at aiwebtutor.streamlit.app.
 Set ANTHROPIC_API_KEY in the app's Secrets for the AI Tutor chat to work;
-every other page works without it.
+every other page works without it. See access_control.py / README.md for
+the optional class access code and daily token budget guard.
 """
 
 import random
@@ -17,6 +18,7 @@ import streamlit as st
 from syllabus_data import MODULE_INFO, UNITS
 from quiz_data import QUIZ_BANK
 import tutor
+import access_control
 
 st.set_page_config(
     page_title="AIWebTutor - Principles of Data Science",
@@ -101,11 +103,33 @@ elif page == "💬 AI Tutor Chat":
             "In the meantime, use **Syllabus Explorer** and **Practice Quiz** "
             "-- they work without an API key."
         )
+    elif access_control.is_access_gated() and not st.session_state.get("access_granted"):
+        st.info("This AI Tutor is for enrolled students. Enter the class access code to continue.")
+        code = st.text_input("Class access code", type="password")
+        if st.button("Unlock"):
+            if access_control.check_access_code(code):
+                st.session_state["access_granted"] = True
+                st.rerun()
+            else:
+                st.error("That code isn't right -- check with your instructor.")
+    elif access_control.daily_limit_reached():
+        st.warning(
+            "The class's daily AI Tutor quota has been used up for today. "
+            "Please check back tomorrow -- **Syllabus Explorer** and "
+            "**Practice Quiz** are still available any time."
+        )
     else:
+        used = access_control.get_usage_today()
+        limit = access_control.get_daily_limit()
         st.caption(
             "Ask about linear algebra, probability, data wrangling, EDA, or "
-            "statistical modelling - answers are grounded in this module's syllabus."
+            "statistical modelling -- answers are grounded in this module's syllabus."
         )
+        if access_control.is_access_gated() or used > 0:
+            st.progress(
+                min(used / limit, 1.0),
+                text=f"Class usage today: {used:,} / {limit:,} tokens",
+            )
 
         if "messages" not in st.session_state:
             st.session_state.messages = []
@@ -123,8 +147,11 @@ elif page == "💬 AI Tutor Chat":
                 st.markdown(prompt)
 
             with st.chat_message("assistant"):
+                usage_sink = {}
                 try:
-                    reply = st.write_stream(tutor.stream_reply(st.session_state.messages))
+                    reply = st.write_stream(
+                        tutor.stream_reply(st.session_state.messages, usage_sink)
+                    )
                 except Exception as e:
                     reply = (
                         "Sorry, I couldn't reach the AI tutor service just now "
@@ -132,6 +159,9 @@ elif page == "💬 AI Tutor Chat":
                     )
                     st.error(reply)
             st.session_state.messages.append({"role": "assistant", "content": reply})
+            access_control.record_usage(
+                usage_sink.get("input_tokens", 0) + usage_sink.get("output_tokens", 0)
+            )
 
         if st.session_state.messages and st.button("Clear conversation"):
             st.session_state.messages = []

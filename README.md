@@ -35,13 +35,34 @@ Every page except **AI Tutor Chat** works with no API key at all.
    ```
 4. Save -- the app redeploys automatically and the AI Tutor Chat page comes alive.
 
+## Sharing with a class safely
+
+Since every student's chat message runs on your one `ANTHROPIC_API_KEY`, two
+optional secrets keep a shared link from running up an unexpected bill:
+
+- `CLASS_ACCESS_CODE` -- students must enter this once per browser session
+  before AI Tutor Chat unlocks. Share the code with your class however you
+  like (announce it, put it on the LMS, etc.). Leave unset to skip the gate.
+- `MAX_DAILY_TOKENS` -- total input+output tokens AI Tutor Chat will use
+  across **all** students combined per day (default `200000`, roughly a
+  few hundred typical exchanges). Once hit, the chat pauses itself until
+  the next day; Syllabus Explorer and Practice Quiz keep working regardless.
+
+Both live in the same Secrets panel as `ANTHROPIC_API_KEY` -- see
+`.streamlit/secrets.toml.example` for the exact syntax. The daily counter
+resets when the app restarts/redeploys (Streamlit Community Cloud's
+filesystem isn't permanent), so this is a safety net against a chatty day,
+not a substitute for setting a spending limit on
+[console.anthropic.com](https://console.anthropic.com).
+
 ## Project structure
 
 ```
-app.py               # Streamlit UI and page routing
-syllabus_data.py      # Module/unit content -- single source of truth
-quiz_data.py          # Practice quiz question bank, keyed by unit
-tutor.py              # Anthropic API wrapper + grounded system prompt
+app.py                # Streamlit UI and page routing
+syllabus_data.py       # Module/unit content -- single source of truth
+quiz_data.py           # Practice quiz question bank, keyed by unit
+tutor.py               # Anthropic API wrapper + grounded system prompt
+access_control.py      # Class access code gate + daily token budget guard
 requirements.txt
 .streamlit/secrets.toml.example
 ```
