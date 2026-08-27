@@ -1,12 +1,12 @@
 """
-AIWebTutor -- a free study companion for the Principles of Data Science
+AIWebTutor — a free study companion for the Principles of Data Science
 module (MEC7144CEM, MSc Data Science, Middle East College).
 
 Run locally with:
     streamlit run app.py
 
 Deployed on Streamlit Community Cloud at aiwebtutor.streamlit.app.
-This app makes no external API calls and needs no secrets/API keys --
+This app makes no external API calls and needs no secrets/API keys —
 it is entirely static content served by Streamlit, so it costs nothing
 to run no matter how many people use it.
 """
@@ -18,30 +18,42 @@ import streamlit as st
 from syllabus_data import MODULE_INFO, UNITS
 from quiz_data import QUIZ_BANK
 import linear_algebra_lab
+import probability_lab
+import data_wrangling_lab
+import stat_modelling_lab
 
 st.set_page_config(
-    page_title="AIWebTutor - Principles of Data Science",
+    page_title="AIWebTutor — Principles of Data Science",
     page_icon="📊",
     layout="wide",
 )
 
 # ---------------------------------------------------------------- sidebar --
 st.sidebar.title("📊 AIWebTutor")
-st.sidebar.caption(f"{MODULE_INFO['code']} - {MODULE_INFO['title']}")
+st.sidebar.caption(f"{MODULE_INFO['code']} · {MODULE_INFO['title']}")
 page = st.sidebar.radio(
     "Go to",
-    ["🏠 Overview", "📚 Syllabus Explorer", "🧮 Linear Algebra Lab", "📝 Practice Quiz", "🎯 Assessment Prep"],
+    [
+        "🏠 Overview",
+        "📚 Syllabus Explorer",
+        "🧮 Linear Algebra Lab",
+        "🎲 Probability Lab",
+        "🧹 Data Wrangling & EDA Lab",
+        "📈 Statistical Modelling Lab",
+        "📝 Practice Quiz",
+        "🎯 Assessment Prep",
+    ],
     key="nav_page",
 )
 st.sidebar.divider()
 st.sidebar.caption(
-    f"{MODULE_INFO['programme']} - {MODULE_INFO['college']}\n\n"
-    f"{MODULE_INFO['level']} - {MODULE_INFO['credit_hours']} credit hours/points"
+    f"{MODULE_INFO['programme']} · {MODULE_INFO['college']}\n\n"
+    f"{MODULE_INFO['level']} · {MODULE_INFO['credit_hours']} credit hours/points"
 )
 
 # ------------------------------------------------------------- Overview ---
 if page == "🏠 Overview":
-    st.title("Principles of Data Science - Study Companion")
+    st.title("Principles of Data Science — Study Companion")
     st.write(MODULE_INFO["objectives"])
 
     col1, col2 = st.columns(2)
@@ -54,7 +66,7 @@ if page == "🏠 Overview":
         st.subheader("Assessment Structure")
         for a in MODULE_INFO["assessments"]:
             with st.container(border=True):
-                st.markdown(f"**{a['name']}** - {a['weight']} - {a['duration']}")
+                st.markdown(f"**{a['name']}** — {a['weight']} · {a['duration']}")
                 st.caption(a["description"])
         st.info(MODULE_INFO["pass_rule"])
 
@@ -80,11 +92,15 @@ elif page == "📚 Syllabus Explorer":
             for t in u["topics"]:
                 st.markdown(f"- {t}")
             st.markdown("**Key terms:** " + ", ".join(f"`{k}`" for k in u["key_terms"]))
-            if u["id"] in (1, 2):
-                st.caption(
-                    "Want to try these hands-on? Head to **Linear Algebra Lab** "
-                    "in the sidebar."
-                )
+            lab_pointer = {
+                1: "🧮 Linear Algebra Lab",
+                2: "🧮 Linear Algebra Lab / 🎲 Probability Lab",
+                3: "🎲 Probability Lab",
+                4: "🧹 Data Wrangling & EDA Lab",
+                5: "📈 Statistical Modelling Lab",
+            }.get(u["id"])
+            if lab_pointer:
+                st.caption(f"Want to try these hands-on? Head to **{lab_pointer}** in the sidebar.")
 
 # ------------------------------------------------------- Linear Algebra Lab
 elif page == "🧮 Linear Algebra Lab":
@@ -103,6 +119,58 @@ elif page == "🧮 Linear Algebra Lab":
         linear_algebra_lab.render_independence_lab()
     with tab3:
         linear_algebra_lab.render_least_squares_lab()
+
+# ----------------------------------------------------------- Probability Lab
+elif page == "🎲 Probability Lab":
+    st.title("Probability Lab")
+    st.caption(
+        "Hands-on practice for Unit 2 & 3: Bayes' theorem, probability "
+        "distributions, and simulation -- edit the numbers and see the "
+        "results update live."
+    )
+    tab1, tab2, tab3 = st.tabs(
+        ["Bayes' Theorem", "Distribution Explorer", "Simulation (Law of Large Numbers)"]
+    )
+    with tab1:
+        probability_lab.render_bayes_lab()
+    with tab2:
+        probability_lab.render_distribution_lab()
+    with tab3:
+        probability_lab.render_simulation_lab()
+
+# ------------------------------------------------ Data Wrangling & EDA Lab
+elif page == "🧹 Data Wrangling & EDA Lab":
+    st.title("Data Wrangling & EDA Lab")
+    st.caption(
+        "Hands-on practice for Unit 4: cleaning messy data, descriptive "
+        "statistics, correlation, and PCA -- using a built-in sample dataset "
+        "or your own CSV upload."
+    )
+    tab1, tab2, tab3 = st.tabs(["Clean the Data", "Descriptive Stats & Correlation", "PCA Explorer"])
+    with tab1:
+        data_wrangling_lab.render_cleaning_lab()
+    with tab2:
+        data_wrangling_lab.render_descriptive_lab()
+    with tab3:
+        data_wrangling_lab.render_pca_lab()
+
+# ------------------------------------------------- Statistical Modelling Lab
+elif page == "📈 Statistical Modelling Lab":
+    st.title("Statistical Modelling Lab")
+    st.caption(
+        "Hands-on practice for Unit 5: simple linear regression, logistic "
+        "regression, hypothesis testing, and ANOVA -- edit the numbers and "
+        "see the results update live."
+    )
+    tab1, tab2, tab3 = st.tabs(
+        ["Linear Regression", "Logistic Regression", "Hypothesis Testing & ANOVA"]
+    )
+    with tab1:
+        stat_modelling_lab.render_linear_regression_lab()
+    with tab2:
+        stat_modelling_lab.render_logistic_regression_lab()
+    with tab3:
+        stat_modelling_lab.render_hypothesis_testing_lab()
 
 # --------------------------------------------------------------- Quizzes --
 elif page == "📝 Practice Quiz":
@@ -178,7 +246,7 @@ elif page == "🎯 Assessment Prep":
 
     for a in MODULE_INFO["assessments"]:
         with st.container(border=True):
-            st.subheader(f"{a['name']} - {a['weight']} ({a['duration']})")
+            st.subheader(f"{a['name']} — {a['weight']} ({a['duration']})")
             st.write(a["description"])
             related_units = mapping.get(a["name"], [])
             if related_units:
