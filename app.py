@@ -17,6 +17,7 @@ import streamlit as st
 
 from syllabus_data import MODULE_INFO, UNITS
 from quiz_data import QUIZ_BANK
+import linear_algebra_lab
 
 st.set_page_config(
     page_title="AIWebTutor - Principles of Data Science",
@@ -29,7 +30,7 @@ st.sidebar.title("📊 AIWebTutor")
 st.sidebar.caption(f"{MODULE_INFO['code']} - {MODULE_INFO['title']}")
 page = st.sidebar.radio(
     "Go to",
-    ["🏠 Overview", "📚 Syllabus Explorer", "📝 Practice Quiz", "🎯 Assessment Prep"],
+    ["🏠 Overview", "📚 Syllabus Explorer", "🧮 Linear Algebra Lab", "📝 Practice Quiz", "🎯 Assessment Prep"],
     key="nav_page",
 )
 st.sidebar.divider()
@@ -79,6 +80,29 @@ elif page == "📚 Syllabus Explorer":
             for t in u["topics"]:
                 st.markdown(f"- {t}")
             st.markdown("**Key terms:** " + ", ".join(f"`{k}`" for k in u["key_terms"]))
+            if u["id"] in (1, 2):
+                st.caption(
+                    "Want to try these hands-on? Head to **Linear Algebra Lab** "
+                    "in the sidebar."
+                )
+
+# ------------------------------------------------------- Linear Algebra Lab
+elif page == "🧮 Linear Algebra Lab":
+    st.title("Linear Algebra Lab")
+    st.caption(
+        "Hands-on practice for Unit 1 & 2: vector space, linear independence, "
+        "basis, determinant, rank, eigenvalues/eigenvectors, orthogonality, "
+        "and least squares -- edit the numbers and see the results update live."
+    )
+    tab1, tab2, tab3 = st.tabs(
+        ["Matrix Explorer", "Independence, Basis & Orthogonality", "Least Squares Fit"]
+    )
+    with tab1:
+        linear_algebra_lab.render_matrix_lab()
+    with tab2:
+        linear_algebra_lab.render_independence_lab()
+    with tab3:
+        linear_algebra_lab.render_least_squares_lab()
 
 # --------------------------------------------------------------- Quizzes --
 elif page == "📝 Practice Quiz":
